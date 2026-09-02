@@ -1,0 +1,35 @@
+name: CEO Bottom Fix
+on:
+  workflow_dispatch:
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix CEO bottom spacing and image framing
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker='/* CEO-BOTTOM-FIX */'
+          if marker not in s:
+              s=s.replace('</style>', marker+'.ceo .team-info{padding-bottom:30px}.ceo .team-photo img{object-position:center top}@media(max-width:750px){.ceo .team-photo{height:390px}.ceo .team-info{padding-bottom:32px}}'+'</style>')
+          p.write_text(s)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Fix CEO card bottom spacing" || true
+          git push
+      - name: Remove workflow
+        if: always()
+        run: |
+          rm -f .github/workflows/ceo-bottom-fix.yml
+          git add .github/workflows/ceo-bottom-fix.yml
+          git commit -m "Remove one-time CEO bottom fix workflow" || true
+          git push || true
