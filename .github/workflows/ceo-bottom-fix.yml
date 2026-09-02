@@ -1,5 +1,8 @@
 name: CEO Bottom Fix
 on:
+  push:
+    paths:
+      - '.github/workflows/ceo-bottom-fix.yml'
   workflow_dispatch:
 jobs:
   fix:
