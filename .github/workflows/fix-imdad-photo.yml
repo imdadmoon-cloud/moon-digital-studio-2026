@@ -1,0 +1,40 @@
+name: Fix Imdad Photo
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-imdad-photo.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set CEO image to assets Imdad Ali.png
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          # Target the CEO card by its WhatsApp link, then replace only its image src.
+          marker='https://wa.me/923048555826'
+          pos=s.find(marker)
+          if pos < 0: raise SystemExit('CEO card not found')
+          start=s.rfind('<a ',0,pos)
+          end=s.find('</a>',pos)
+          if start < 0 or end < 0: raise SystemExit('CEO card boundaries not found')
+          card=s[start:end]
+          card2=re.sub(r'<img\b([^>]*?)\bsrc=["\'][^"\']*["\']', r'<img\1src="assets/Imdad%20Ali.png"', card, count=1, flags=re.I)
+          if card==card2: raise SystemExit('CEO image tag not changed')
+          s=s[:start]+card2+s[end:]
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Use correct Imdad Ali team photo'
+          git push
