@@ -1,0 +1,40 @@
+name: Fix Team Photos
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-team-photos.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix Imdad Ali and Shahid photo paths
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          def fix_tag(s, alt, src):
+              pat = re.compile(r'<img\b(?=[^>]*\balt=["\']'+re.escape(alt)+r'["\'])[^>]*>', re.I)
+              def repl(m):
+                  tag = m.group(0)
+                  tag = re.sub(r'\bsrc=["\'][^"\']*["\']', 'src="'+src+'"', tag, count=1, flags=re.I)
+                  return tag
+              return pat.sub(repl, s)
+          s = fix_tag(s, 'Imdad Ali - CEO', 'assets/Imdad%20Ali.png')
+          s = fix_tag(s, 'Shahid - Video Editor', 'assets/Shahid%20%20%20.png')
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit and remove workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Fix Imdad Ali and Shahid team photos'
+          git rm .github/workflows/fix-team-photos.yml
+          git commit -m 'Remove temporary team photo fix workflow'
+          git push
